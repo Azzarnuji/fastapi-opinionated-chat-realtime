@@ -8,7 +8,9 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi-opinionated-core @ git+https://github.com/Azzarnuji/fastapi-opinionated-core.git"
+    "fastapi-opinionated-core @ git+https://github.com/Azzarnuji/fastapi-opinionated-core.git",
+    "fastapi-opinionated-socket @ git+https://github.com/Azzarnuji/fastapi-opinionated-socket.git",
+    "fastapi-opinionated-eventbus @ git+https://github.com/Azzarnuji/fastapi-opinionated-eventbus.git"
 ]
 packages = [
     { include = "fastapi_opinionated_chat_realtime" }
