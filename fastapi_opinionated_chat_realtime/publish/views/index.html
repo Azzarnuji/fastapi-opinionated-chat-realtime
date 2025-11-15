@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Realtime Chat</title>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #121212;
+        color: #ffffff;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      header {
+        background: #1f1f1f;
+        padding: 15px;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+        border-bottom: 1px solid #333;
+      }
+
+      #chat-box {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .msg {
+        margin-bottom: 12px;
+        padding: 10px;
+        border-radius: 5px;
+        background: #1e1e1e;
+      }
+
+      .msg.you {
+        background: #2a2a2a;
+        text-align: right;
+      }
+
+      form {
+        padding: 15px;
+        background: #1f1f1f;
+        display: flex;
+        gap: 10px;
+        border-top: 1px solid #333;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        padding: 10px;
+        border-radius: 4px;
+        border: none;
+        outline: none;
+      }
+
+      button {
+        padding: 10px 20px;
+        border: none;
+        background: #00aaff;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+      }
+
+      #room-box {
+        padding: 10px;
+        background: #1f1f1f;
+        border-bottom: 1px solid #333;
+        display: flex;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>Realtime Chat — FastAPI Opinionated</header>
+
+    <div id="room-box">
+      <input id="room" type="text" placeholder="Enter room name" />
+      <button onclick="joinRoom()">Join</button>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <form id="msg-form">
+      <input id="msg" type="text" placeholder="Type a message..." />
+      <button>Send</button>
+    </form>
+
+    <script>
+      // ===============================================
+      // CONNECT TO SOCKET.IO (namespace = /chat)
+      // ===============================================
+      const socket = io("/chat", {
+        path: "/socket",
+        transports: ["websocket"],
+      });
+
+      let currentRoom = null;
+      const chatBox = document.getElementById("chat-box");
+
+      // ===============================================
+      // JOIN ROOM
+      // ===============================================
+      function joinRoom() {
+        const room = document.getElementById("room").value.trim();
+        if (!room) return;
+
+        currentRoom = room;
+
+        socket.emit("join", { room });
+
+        addMsg(`Joining room: ${room}`, false);
+      }
+
+      // ON JOIN CONFIRMATION
+      socket.on("room.joined", (data) => {
+        addMsg(`Joined room ${data.room}`, false);
+      });
+
+      // ===============================================
+      // SEND MESSAGE
+      // ===============================================
+      const form = document.getElementById("msg-form");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const message = document.getElementById("msg").value.trim();
+        if (!message || !currentRoom) return;
+
+        socket.emit("chat.send", {
+          room: currentRoom,
+          message: message,
+        });
+
+        addMsg(message, true);
+
+        document.getElementById("msg").value = "";
+      });
+
+      // ===============================================
+      // RECEIVE MESSAGE
+      // Controller emits: { room, message }
+      // ===============================================
+      socket.on("chat.message", (data) => {
+        if (data.room === currentRoom) {
+          addMsg(data.message, false);
+        }
+      });
+
+      // ===============================================
+      // Utility — Add message to UI
+      // ===============================================
+      function addMsg(text, isYou) {
+        const div = document.createElement("div");
+        div.className = "msg" + (isYou ? " you" : "");
+        div.textContent = text;
+
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    </script>
+  </body>
+</html>
